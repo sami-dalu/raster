@@ -1,8 +1,9 @@
 (test
  (name test)
- (libraries 
+ (libraries
   core
   expect_test_helpers_core
   image_exercise_lib
- )
-)
+  expect_test_helpers_async)
+ (preprocess
+  (pps ppx_jane)))

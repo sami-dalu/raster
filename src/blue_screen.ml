@@ -1,16 +1,36 @@
 open Core
 
-let is_blue r g b = b > r + g
 
+
+(* let energy ~x ~y ~r ~g ~b = 
+
+;; *)
 (* You need to change the implementation of this function so that it replaces
    the "blue" pixels of the foreground image with pixels from the
    corresponding position in the background image instead of just ignoring
    the background image and returning the foreground image. *)
+let get_neigbhors ~x ~y img = 
+  let possible_neighbors = [if (x+1) < Image.width img then Some (Image.get img ~x:(x+1) ~y:y) else None; 
+  if (y+1) < Image.height img then Some (Image.get img ~x:x ~y:(y+1)) else None;
+  if (x-1) >=0 then Some (Image.get img ~x:(x-1) ~y:(y)) else None;
+  if (y-1) >=0 then Some (Image.get img ~x:(x) ~y:(y-1)) else None;
+  if (x-1) >=0 && (y-1) >=0 then Some (Image.get img ~x:(x-1) ~y:(y-1)) else None;
+  if (x+1) < Image.width img && (y-1) >=0 then Some (Image.get img ~x:(x+1) ~y:(y-1)) else None;
+  if (x-1) >= 0 && (y+1) < Image.height img then Some (Image.get img ~x:(x-1) ~y:(y+1)) else None;
+  if (x+1) < Image.width img && (y+1) < Image.height img then Some (Image.get img ~x:(x+1) ~y:(y+1)) else None
+  ] in
+  List.filter_opt possible_neighbors
 let transform ~foreground ~background =
+  let is_blue r g b =
+    2 * b * b >  3 * (r*r + g*g)
+  in
   Image.mapi foreground ~f:(fun ~x:x1 ~y:y1 (r1, g1, b1) ->
-    if is_blue r1 g1 b1 then Image.get background ~x:x1 ~y:y1 else r1, g1, b1)
+    (* is_blue r1 g1 b1 &&  *)
+    if is_blue r1 g1 b1 && List.count (get_neigbhors ~x:x1 ~y:y1 foreground) ~f:(fun (r, g, b) -> is_blue r g b) >= 5 then (
+      Image.get background ~x:x1 ~y:y1)
+   else r1, g1, b1
+  )
 ;;
-
 let command =
   Command.basic
     ~summary:

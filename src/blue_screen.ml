@@ -22,11 +22,11 @@ let get_neigbhors ~x ~y img =
   List.filter_opt possible_neighbors
 let transform ~foreground ~background =
   let is_blue r g b =
-    2 * b * b >  3 * (r*r + g*g)
+    10 * b * b >  19 * (r*r + g*g)
   in
   Image.mapi foreground ~f:(fun ~x:x1 ~y:y1 (r1, g1, b1) ->
     (* is_blue r1 g1 b1 &&  *)
-    if is_blue r1 g1 b1 && List.count (get_neigbhors ~x:x1 ~y:y1 foreground) ~f:(fun (r, g, b) -> is_blue r g b) >= 5 then (
+    if is_blue r1 g1 b1 && List.count (get_neigbhors ~x:x1 ~y:y1 foreground) ~f:(fun (r, g, b) -> is_blue r g b) >= 3 then (
       Image.get background ~x:x1 ~y:y1)
    else r1, g1, b1
   )

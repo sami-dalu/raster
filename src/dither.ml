@@ -92,28 +92,46 @@ let closest_color palette ~c ~max ~n =
     Float.round_nearest (Float.of_int color /. Float.of_int interval_size)
   in
   (* if Int.of_float index >= n then *)
-  printf "out of bounds %d %d %f\n" color interval_size index;
+  (* printf "out of bounds %d %d %f\n" color interval_size index; *)
   (* printf "color: %d interval_size:%d\n" c interval_size; *)
   palette.(Int.of_float index)
 ;;
 
 let distribute_error_color ~x ~y ~err ~img ~c =
-  let new_pixel ~x1 ~y1 =
+  let new_pixel ~x1 ~y1 error =
     let r, g, b = Image.get img ~x:x1 ~y:y1 in
-    let new_pixel =
+    let pixel =
       match c with
-      | 'r' -> r + err, g, b
-      | 'g' -> r, g + err, b
-      | _ -> r, g, b + err
+      | 'r' -> r + error, g, b
+      | 'g' -> r, g + error, b
+      | _ -> r, g, b + error
     in
-    Image.set img ~x:x1 ~y:y1 new_pixel
+    Image.set img ~x:x1 ~y:y1 pixel
   in
-  if x + 1 < Image.width img then new_pixel ~x1:(x + 1) ~y1:y;
-  if y + 1 < Image.height img then new_pixel ~x1:x ~y1:(y + 1);
+  if x + 1 < Image.width img
+  then
+    new_pixel
+      ~x1:(x + 1)
+      ~y1:y
+      (Int.of_float (7. /. 16. *. Float.of_int err));
+  if y + 1 < Image.height img
+  then
+    new_pixel
+      ~x1:x
+      ~y1:(y + 1)
+      (Int.of_float (5. /. 16. *. Float.of_int err));
   if y + 1 < Image.height img && x - 1 >= 0
-  then new_pixel ~x1:(x - 1) ~y1:(y + 1);
+  then
+    new_pixel
+      ~x1:(x - 1)
+      ~y1:(y + 1)
+      (Int.of_float (3. /. 16. *. Float.of_int err));
   if y + 1 < Image.height img && x + 1 < Image.width img
-  then new_pixel ~x1:(x + 1) ~y1:(y + 1)
+  then
+    new_pixel
+      ~x1:(x + 1)
+      ~y1:(y + 1)
+      (Int.of_float (1. /. 16. *. Float.of_int err))
 ;;
 
 let color_transform image n =
@@ -121,14 +139,14 @@ let color_transform image n =
   let image_max = Image.max_val image in
   let _ =
     Image.mapi image ~f:(fun ~x:x1 ~y:y1 (r, g, b) ->
-      printf "x = %d y = %d %d %d %d\n" x1 y1 r g b;
+      (* printf "x = %d y = %d %d %d %d\n" x1 y1 r g b; *)
       let new_r = closest_color palette ~c:r ~n ~max:image_max in
       let new_g = closest_color palette ~c:g ~n ~max:image_max in
       let new_b = closest_color palette ~c:b ~n ~max:image_max in
       Image.set image ~x:x1 ~y:y1 (new_r, new_g, new_b);
-      distribute_error_color ~x:x1 ~y:y1 ~err:(new_r - r) ~c:'r' ~img:image;
-      distribute_error_color ~x:x1 ~y:y1 ~err:(new_g - g) ~c:'g' ~img:image;
-      distribute_error_color ~x:x1 ~y:y1 ~err:(new_b - b) ~c:'b' ~img:image;
+      distribute_error_color ~x:x1 ~y:y1 ~err:(r - new_r) ~c:'r' ~img:image;
+      distribute_error_color ~x:x1 ~y:y1 ~err:(g - new_g) ~c:'g' ~img:image;
+      distribute_error_color ~x:x1 ~y:y1 ~err:(b - new_b) ~c:'b' ~img:image;
       Image.get image ~x:x1 ~y:y1)
   in
   image
